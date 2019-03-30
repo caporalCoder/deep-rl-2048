@@ -1,0 +1,36 @@
+@import url("https://fonts.googleapis.com/css?family=Bungee|Bungee+Outline");
+
+:host {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  background-color: rgb(216, 172, 123);
+  font-family: "Bungee", cursive, sans-serif;
+  font-size: 1em;
+  width: 100%;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.game-2048-body {
+  display: flex;
+  flex: 1;
+  position: relative;
+}
+
+.layout-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: 50% 10%;
+  transition: all 500ms;
+  opacity: 0;
+
+  &.ng-lazyloaded {
+    opacity: 1;
+  }
+}
+

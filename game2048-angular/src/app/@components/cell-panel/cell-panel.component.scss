@@ -1,0 +1,27 @@
+$cell-bg-color: rgba(238, 228, 218, 0.35);
+
+:host {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  z-index: 1;
+}
+
+.game-2048-cell {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 4px;
+  box-sizing: border-box;
+
+  .game-2048-cell-inner {
+    width: 100%;
+    height: 100%;
+    background: $cell-bg-color;
+    border-radius: .5rem;
+  }
+}

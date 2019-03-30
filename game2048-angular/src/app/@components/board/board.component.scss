@@ -1,0 +1,53 @@
+$panel-bg-color: rgba(96, 51, 9, 0.68);
+
+:host {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.game-2048-panel-wrapper {
+  position: relative;
+  width: 450px;
+  height: 450px;
+  padding: 12px;
+  background: $panel-bg-color;
+  border-radius: 1rem;
+  box-sizing: border-box;
+  font-size: 35px;
+}
+
+@media only screen and (max-width: 600px) {
+  .game-2048-panel-wrapper {
+    width: 320px;
+    height: 320px;
+    font-size: 20px;
+  }
+}
+
+.game-2048-panel {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+.game-2048-won-message {
+  font-family: cursive, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: $panel-bg-color;
+  width: 90%;
+  max-width: 450px;
+  margin: 1.25rem 0 0;
+}
+
+.game-2048-instruction {
+  width: 90%;
+  max-width: 450px;
+  margin: 1.25rem 0 0;
+}

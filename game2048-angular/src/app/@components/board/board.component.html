@@ -1,0 +1,8 @@
+<div class="game-2048-panel-wrapper" (window:keydown)="handleKeydownOnWrapper($event)" #wrapper>
+    <div class="game-2048-panel">
+        <dx-cell-panel [cells]="cells" [size]="cellSize"> dfaafd</dx-cell-panel>
+
+        <dx-tile-panel [tiles]="tiles$ | async" [tileSize]="cellSize"></dx-tile-panel>
+    </div>
+    <dx-over-panel *ngIf="(stats$| async)?.gameOver" (restart)="newGame()"></dx-over-panel>
+</div>

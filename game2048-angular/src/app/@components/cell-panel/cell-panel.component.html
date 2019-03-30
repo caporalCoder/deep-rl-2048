@@ -1,0 +1,7 @@
+<div *ngFor="let cell of cells; index as i"
+     class="game-2048-cell"
+     [style.width.px]="size"
+     [style.height.px]="size"
+     [style.transform]="getCellTransformStyle(i)">
+    <div class="game-2048-cell-inner"></div>
+</div>

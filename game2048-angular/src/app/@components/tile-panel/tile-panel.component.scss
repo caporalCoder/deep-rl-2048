@@ -1,0 +1,68 @@
+$colors: #EEE4DA, // 2
+#EAE0C8, // 4
+#F59563, // 8
+#3399ff, // 16
+#ffa333, // 32
+#cef030, // 64
+#E8D8CE, // 128
+#990303, // 256
+#6BA5DE, // 512
+#DCAD60, // 1024
+#B60022; // 2048
+
+@function power ($x, $n) {
+  $ret: 1;
+
+  @if $n >= 0 {
+    @for $i from 1 through $n {
+      $ret: $ret * $x;
+    }
+  } @else {
+    @for $i from $n to 0 {
+      $ret: $ret / $x;
+    }
+  }
+
+  @return $ret;
+}
+
+:host {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  z-index: 2;
+}
+
+.game-2048-tile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 4px;
+  box-sizing: border-box;
+  z-index: 1;
+  transition: transform 100ms ease-in-out;
+
+  &.is-merged {
+    z-index: 2;
+  }
+
+  @for $x from 1 through length($colors) {
+    &.game-2048-tile-#{power(2, $x)} .game-2048-tile-inner {
+      background: nth($colors, $x);
+    }
+  }
+
+  .game-2048-tile-inner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    background: #B60022;
+    border-radius: .5rem;
+  }
+}

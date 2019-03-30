@@ -1,0 +1,11 @@
+<div *ngFor="let tile of tiles;trackBy: trackByFn"
+     class="game-2048-tile game-2048-tile-{{tile.value}}"
+     [class.is-merged]="tile.merged"
+     [style.width.px]="tileSize"
+     [style.height.px]="tileSize"
+     [style.transform]="getTileTransformStyle(tile)">
+    <div class="game-2048-tile-inner"
+         [@tileAnimate]="tile.merged? 'merged' : 'unmerged'">
+        {{tile.value}}
+    </div>
+</div>
