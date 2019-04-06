@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-
+from play import board_game_2048
 
 
 class NeuralNetwork(nn.Module):
@@ -179,7 +179,7 @@ def train(model, start):
 
 
 def test(model):
-    game_state = GameState()
+    game_state = board_game_2048()
 
     # initial action is do nothing
     action = torch.zeros([model.number_of_actions], dtype=torch.float32)
