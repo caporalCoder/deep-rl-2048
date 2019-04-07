@@ -3,12 +3,22 @@ from random import randint, random
 
 
 class board_game_2048():
+
+
     def __init__(self):
         self.board = np.zeros((4, 4), dtype=np.int)
+        self.number_of_action = 4
         self.game_over = False
 
-        self.fill_cell(game.board)
-        self.fill_cell(game.board)
+        self.fill_cell(self.board)
+        self.fill_cell(self.board)
+
+    def reset(self):
+        self.board = np.zeros((4, 4), dtype=np.int)
+        self.game_over = False
+        self.number_of_action = 4
+        self.fill_cell(self.board)
+        self.fill_cell(self.board)
 
     def move(self, direction):
         # 0: left, 1: up, 2: right, 3: down
