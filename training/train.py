@@ -1,3 +1,4 @@
+from __future__ import print_function
 import gym
 import math
 import random
@@ -31,8 +32,7 @@ plt.ion()
 # if gpu is to be used
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Initialize transition tuple
-Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+
 
 environment.reset()
 
@@ -136,21 +136,24 @@ for i_episode in range(num_episodes):
     print(f"-------- Iteration {i_episode} --------")
     # Initialize the environment and state
     state = environment.reset()
-
+    state = torch.from_numpy(state)
     for t in count():
+        print(f" episode duration {t}")
         #TODO: render scene
         # Select and perform an action
+        print(state)
         action = select_action(state)
         next_state, reward, done = environment.apply_action(action.item()) 
 
-        reward = torch.tensor([reward], device=device)
-
+        print(type(next_state), next_state)
+        next_state = torch.from_numpy(next_state)
+        
         if done:
             reward = -50
             next_state = None
 
         memory.push(state, action, next_state, reward)
-
+        reward = torch.tensor([reward], device=device)
         # Move to the next state
         state = next_state
 
