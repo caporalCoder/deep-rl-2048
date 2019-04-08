@@ -133,28 +133,22 @@ def optimize_model():
 
 num_episodes = 50
 for i_episode in range(num_episodes):
+    print(f"-------- Iteration {i_episode} --------")
     # Initialize the environment and state
-    environment.reset()
-    # TODO : get game state
-    state = None
+    state = environment.reset()
 
     for t in count():
+        #TODO: render scene
         # Select and perform an action
         action = select_action(state)
-        _, reward, done, _ = env.step(action.item())
+        next_state, reward, done = environment.apply_action(action.item()) 
+
         reward = torch.tensor([reward], device=device)
 
-        # Observe new state
-        #TODO: get new game state
-
-        state = None
-        
-        if not done:
-            next_state = current_screen - last_screen
-        else:
+        if done:
+            reward = -50
             next_state = None
 
-        # Store the transition in memory
         memory.push(state, action, next_state, reward)
 
         # Move to the next state
@@ -164,8 +158,8 @@ for i_episode in range(num_episodes):
         optimize_model()
         if done:
             episode_durations.append(t + 1)
-            #plot_durations()
             break
+    
     # Update the target network, copying all weights and biases in DQN
     if i_episode % TARGET_UPDATE == 0:
         target_net.load_state_dict(policy_net.state_dict())
