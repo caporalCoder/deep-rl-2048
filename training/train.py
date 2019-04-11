@@ -23,12 +23,18 @@ BATCH_SIZE = 128  # Q-learning batch size
 class Network(nn.Module):
     def __init__(self):
         nn.Module.__init__(self)
-        self.l1 = nn.Linear(16, HIDDEN_LAYER)
-        self.l2 = nn.Linear(HIDDEN_LAYER, 2)
+        self.input_layer = nn.Linear(16, 32)
+        self.fc1 = nn.Linear(32, 64)
+        self.fc2 = nn.Linear(64, 64)
+        self.fc3 = nn.Linear(64, 32)
+        self.output = nn.Linear(32, 4)
 
     def forward(self, x):
-        x = F.relu(self.l1(x))
-        x = self.l2(x)
+        x = F.relu(self.input_layer(x))
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        x = self.output(F.sigmoid(x))
         return x
 
 model = Network()
@@ -76,14 +82,16 @@ def run_episode(e, environment):
     state = state.flatten()
     steps = 0
     while True:
-        environment.render()
+        #environment.render()
         action = select_action(torch.FloatTensor([state]))
         next_state, reward, done, _ = environment.step(action.numpy()[0, 0])
-
-        next_state = next_state.flatten()
         # negative reward when attempt ends
         if done:
+            print(next_state)
             reward = -10
+
+        next_state = next_state.flatten()
+        
 
         memory.push((torch.FloatTensor([state]),
                      action,  # action is already a tensor
