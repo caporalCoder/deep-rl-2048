@@ -4,11 +4,14 @@ import gym
 import random
 import math
 import torch
+import pickle
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+from network import Network, DQN
+from memory import ReplayMemory
 
 #%% hyper parameters
 EPS_START = 0.9  # e-greedy threshold start value
@@ -20,24 +23,7 @@ HIDDEN_LAYER = 256  # NN hidden layer size
 BATCH_SIZE = 128  # Q-learning batch size
 
 #%% DQN NETWORK ARCHITECTURE
-class Network(nn.Module):
-    def __init__(self):
-        nn.Module.__init__(self)
-        self.input_layer = nn.Linear(16, 32)
-        self.fc1 = nn.Linear(32, 64)
-        self.fc2 = nn.Linear(64, 64)
-        self.fc3 = nn.Linear(64, 32)
-        self.output = nn.Linear(32, 4)
-
-    def forward(self, x):
-        x = F.relu(self.input_layer(x))
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        x = self.output(F.sigmoid(x))
-        return x
-
-model = Network()
+model = DQN(4, 4, 4)
 optimizer = optim.Adam(model.parameters(), LR)
 
 #%% SELECT ACTION USING GREEDY ALGORITHM
@@ -56,22 +42,7 @@ def select_action(state):
         #return random action
         return torch.LongTensor([[random.randrange(2)]])
     
-#%% MEMORY REPLAY
-class ReplayMemory:
-    def __init__(self, capacity):
-        self.capacity = capacity
-        self.memory = []
 
-    def push(self, transition):
-        self.memory.append(transition)
-        if len(self.memory) > self.capacity:
-            del self.memory[0]
-
-    def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
-
-    def __len__(self):
-        return len(self.memory)
 
 #%% Setup Memory size
 memory = ReplayMemory(10000)
@@ -79,7 +50,7 @@ episode_durations = []
 
 def run_episode(e, environment):
     state = environment.reset()
-    state = state.flatten()
+    #state = state.flatten()
     steps = 0
     while True:
         #environment.render()
@@ -92,7 +63,7 @@ def run_episode(e, environment):
 
         next_state = next_state.flatten()
         
-
+        state = state.flatten()
         memory.push((torch.FloatTensor([state]),
                      action,  # action is already a tensor
                      torch.FloatTensor([next_state]),
@@ -117,7 +88,7 @@ def learn():
     # random transition batch is taken from experience replay memory
     transitions = memory.sample(BATCH_SIZE)
     batch_state, batch_action, batch_next_state, batch_reward = zip(*transitions)
-
+    
     batch_state = Variable(torch.cat(batch_state))
     batch_action = Variable(torch.cat(batch_action))
     batch_reward = Variable(torch.cat(batch_reward))
