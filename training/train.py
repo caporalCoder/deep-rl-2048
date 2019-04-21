@@ -24,6 +24,7 @@ BATCH_SIZE = 128  # Q-learning batch size
 
 #%% DQN NETWORK ARCHITECTURE
 model = DQN(4, 4, 4)
+model.cuda()
 optimizer = optim.Adam(model.parameters(), LR)
 
 #%% SELECT ACTION USING GREEDY ALGORITHM
@@ -37,7 +38,9 @@ def select_action(state):
     #print(state.shape)
     if sample > eps_threshold:
         #return argmaxQ
-        return model(Variable(state, volatile=True).type(torch.FloatTensor)).data.max(1)[1].view(1, 1)
+        # state = state.cuda()
+        # Variable(state, volatile=True).type(torch.FloatTensor)
+        return model(state).data.max(1)[1].view(1, 1).cpu()
     else:
         #return random action
         return torch.LongTensor([[random.randrange(2)]])
@@ -95,13 +98,14 @@ def learn():
     batch_next_state = Variable(torch.cat(batch_next_state))
 
     # current Q values are estimated by NN for all actions
-    current_q_values = model(batch_state).gather(1, batch_action)
+    current_q_values = model(Variable(batch_state, volatile=True).type(torch.cuda.FloatTensor))
+    current_q_values = current_q_values.gather(1, batch_action.cuda())
     # expected Q values are estimated from actions which gives maximum Q value
     max_next_q_values = model(batch_next_state).detach().max(1)[0]
-    expected_q_values = batch_reward + (GAMMA * max_next_q_values)
+    expected_q_values = batch_reward + (GAMMA * max_next_q_values.cpu())
 
     # loss is measured from error between current and newly expected Q values
-    loss = F.smooth_l1_loss(current_q_values.reshape_as(expected_q_values), expected_q_values)
+    loss = F.smooth_l1_loss(current_q_values.cuda().reshape_as(expected_q_values.cuda()), expected_q_values.cuda())
 
     # backpropagation of loss to NN
     optimizer.zero_grad()

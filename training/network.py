@@ -28,8 +28,11 @@ class DQN(nn.Module):
         self.conv3 = nn.Conv2d(256, 512, kernel_size=2, stride=2)
         #self.bn3 = nn.BatchNorm2d(32)
 
-        self.loss = nn.MSELoss()
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        #self.loss = nn.MSELoss()
+        if T.cuda.is_available():
+            self.device = T.cuda.set_device(0)
+        else:
+            self.device = T.device('cpu')
         self.to(self.device)
         # Number of Linear input connections depends on output of conv2d layers
         # and therefore the input image size, so compute it.
@@ -43,7 +46,7 @@ class DQN(nn.Module):
         self.head = nn.Linear(256, outputs)
 
     def forward(self, observation):
-        observation = T.Tensor(observation).to(self.device)
+        observation = observation.cuda()#T.Tensor(observation).to(self.device)
         observation = observation.view(-1, 1, 4, 4)
         observation = F.relu(self.conv1(observation))
 
