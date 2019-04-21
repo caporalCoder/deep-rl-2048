@@ -50,20 +50,22 @@ def select_action(state):
 #%% Setup Memory size
 memory = ReplayMemory(10000)
 episode_durations = []
-
 def run_episode(e, environment):
     state = environment.reset()
     #state = state.flatten()
     steps = 0
+    total_reward = 0
     while True:
         #environment.render()
         action = select_action(torch.FloatTensor([state]))
         next_state, reward, done, _ = environment.step(action.numpy()[0, 0])
         # negative reward when attempt ends
+        total_reward = total_reward + reward
         if done:
             print(next_state)
+            print("Reward: {}".format(total_reward))
+            total_reward = 0
             reward = -10
-
         next_state = next_state.flatten()
         
         state = state.flatten()
