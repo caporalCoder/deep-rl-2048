@@ -11,7 +11,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
-from network import Network, DQN
+from network import Network, DQN, DuelingDQN
 from memory import ReplayMemory
 
 #%% hyper parameters
@@ -23,8 +23,14 @@ LR = 0.001  # NN optimizer learning rate
 HIDDEN_LAYER = 256  # NN hidden layer size
 BATCH_SIZE = 64  # Q-learning batch size
 
+
+#establish the environment
+#env = gym.make('CartPole-v0') 
+env = gym.make('2048-v0')
+
 #%% DQN NETWORK ARCHITECTURE
-model = DQN(4, 4, 4)
+#model = DQN(4, 4, 4)
+model = DuelingDQN(env.observation_space.shape, 4)
 model.cuda()
 optimizer = optim.Adam(model.parameters(), LR)
 
@@ -124,9 +130,7 @@ def learn():
 #%% RUN AND SHOW THE RESULT
 
 EPISODES = 10000  # number of episodes
-#establish the environment
-#env = gym.make('CartPole-v0') 
-env = gym.make('2048-v0')
+
 
 
 if not os.path.exists('pretrained_model/'):

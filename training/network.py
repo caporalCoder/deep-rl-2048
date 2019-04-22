@@ -53,3 +53,44 @@ class DQN(nn.Module):
         observation = F.relu(self.conv2(observation))
         observation = F.relu(self.fc1(observation.view(-1, self.linear_input_size)))
         return self.head(observation)
+
+
+
+
+class DuelingDQN(nn.Module):
+    def __init__(self, shape, outputs):
+        super(DuelingDQN, self).__init__()
+        
+    
+        self.input_shape = shape
+        self.num_actions = outputs
+        
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=2, stride=2)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=2, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=2, stride=2)
+
+        self.adv1 = nn.Linear(64 * 4 * 4, 512)
+        self.adv2 = nn.Linear(512, self.num_actions)
+
+        self.val1 = nn.Linear(64 * 4 * 4, 512)
+        self.val2 = nn.Linear(512, 1)
+        
+    def forward(self, x):
+        x = x.cuda()
+        x = x.view(-1, 1 , 4, 4)
+        print(x.size())
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = x.view(x.size(0), -1)
+
+        adv = F.relu(self.adv1(x))
+        adv = self.adv2(adv)
+
+        val = F.relu(self.val1(x))
+        val = self.val2(val)
+
+        return val + adv - adv.mean()
+    
+    def feature_size(self):
+        return self.conv3(self.conv2(self.conv1(T.zeros(1, *self.input_shape)))).view(1, -1).size(1)
