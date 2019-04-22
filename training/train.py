@@ -1,4 +1,5 @@
 # %%  Import
+import os
 import gym_2048
 import gym
 import random
@@ -20,7 +21,7 @@ EPS_DECAY = 200  # e-greedy threshold decay
 GAMMA = 0.8  # Q-learning discount factor
 LR = 0.001  # NN optimizer learning rate
 HIDDEN_LAYER = 256  # NN hidden layer size
-BATCH_SIZE = 128  # Q-learning batch size
+BATCH_SIZE = 64  # Q-learning batch size
 
 #%% DQN NETWORK ARCHITECTURE
 model = DQN(4, 4, 4)
@@ -36,6 +37,7 @@ def select_action(state):
     steps_done += 1
 
     #print(state.shape)
+    #print(eps_threshold)
     if sample > eps_threshold:
         #return argmaxQ
         # state = state.cuda()
@@ -58,17 +60,18 @@ def run_episode(e, environment):
     while True:
         #environment.render()
         action = select_action(torch.FloatTensor([state]))
+        
         next_state, reward, done, _ = environment.step(action.numpy()[0, 0])
         # negative reward when attempt ends
         total_reward = total_reward + reward
         if done:
-            print(next_state)
-            print("Reward: {}".format(total_reward))
+            #print(next_state)
+            print("Reward: {0} || Episode {1} finished after {2} steps".format(total_reward, e, steps))
             total_reward = 0
             reward = -10
-        next_state = next_state.flatten()
+        #next_state = next_state.flatten()
         
-        state = state.flatten()
+        #state = state.flatten()
         memory.push((torch.FloatTensor([state]),
                      action,  # action is already a tensor
                      torch.FloatTensor([next_state]),
@@ -81,8 +84,12 @@ def run_episode(e, environment):
 
         if done:
             #print("{2} Episode {0} finished after {1} steps".format(e, steps, '\033[92m' if steps >= 195 else '\033[99m'))
-            print("Episode {0} finished after {1} steps".format(e, steps))
+            
             episode_durations.append(steps)
+
+            if steps % 100 == 0:
+                torch.save(model, "pretrained_model/current_model_" + str(steps) + ".pth")
+
             break
             
 #%% TRAIN THE MODEL
@@ -120,6 +127,10 @@ EPISODES = 10000  # number of episodes
 #establish the environment
 #env = gym.make('CartPole-v0') 
 env = gym.make('2048-v0')
+
+
+if not os.path.exists('pretrained_model/'):
+    os.mkdir('pretrained_model/')
 
 
 #%% Run episodes learning
