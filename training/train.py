@@ -21,7 +21,7 @@ EPS_DECAY = 200  # e-greedy threshold decay
 GAMMA = 0.8  # Q-learning discount factor
 LR = 0.001  # NN optimizer learning rate
 HIDDEN_LAYER = 256  # NN hidden layer size
-BATCH_SIZE = 64  # Q-learning batch size
+BATCH_SIZE = 1024  # Q-learning batch size
 
 
 #establish the environment
@@ -65,7 +65,7 @@ def run_episode(e, environment):
     total_reward = 0
     while True:
         #environment.render()
-        state = state/np.amax(state) #.flatten()
+        state = state/131072 #.flatten()
         action = select_action(torch.FloatTensor([state]))
         
         next_state, reward, done, _ = environment.step(action.numpy()[0, 0])
