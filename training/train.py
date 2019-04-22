@@ -12,8 +12,11 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from network import Network, DQN, DuelingDQN
-from memory import ReplayMemory
+from utils.replay_memory import ReplayMemory, Transition
 import numpy as np
+
+USE_GENERATED_MEMORY = True
+
 #%% hyper parameters
 EPS_START = 0.9  # e-greedy threshold start value
 EPS_END = 0.05  # e-greedy threshold end value
@@ -21,12 +24,12 @@ EPS_DECAY = 200  # e-greedy threshold decay
 GAMMA = 0.8  # Q-learning discount factor
 LR = 0.001  # NN optimizer learning rate
 HIDDEN_LAYER = 256  # NN hidden layer size
-BATCH_SIZE = 1024  # Q-learning batch size
+BATCH_SIZE = 16  # Q-learning batch size
 
 
 #establish the environment
 #env = gym.make('CartPole-v0') 
-env = gym.make('2048-v0')
+env = gym.make('game-2048-v0')
 
 #%% DQN NETWORK ARCHITECTURE
 #model = DQN(4, 4, 4)
@@ -38,9 +41,12 @@ optimizer = optim.Adam(model.parameters(), LR)
 steps_done = 0
 def select_action(state):
     global steps_done
+    global epsHistory 
     sample = random.random()
     eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
     steps_done += 1
+
+    epsHistory.append(eps_threshold)
 
     #print(state.shape)
     #print(eps_threshold)
@@ -48,7 +54,7 @@ def select_action(state):
         #return argmaxQ
         # state = state.cuda()
         # Variable(state, volatile=True).type(torch.FloatTensor)
-        return model(state).data.max(1)[1].view(1, 1).cpu()
+        return model(Variable(state, volatile=True).type(torch.FloatTensor)).data.max(1)[1].view(1, 1).cpu()
     else:
         #return random action
         return torch.LongTensor([[random.randrange(2)]])
@@ -56,8 +62,14 @@ def select_action(state):
 
 
 #%% Setup Memory size
-memory = ReplayMemory(10000)
+if USE_GENERATED_MEMORY:
+    print("using memory")
+    memory = pickle.load(open("replay_memory.p", 'rb'))
+else:
+    memory = ReplayMemory(50000000)
 episode_durations = []
+total_rewards = []
+epsHistory = []
 def run_episode(e, environment):
     state = environment.reset()
     #state = state.flatten()
@@ -65,23 +77,21 @@ def run_episode(e, environment):
     total_reward = 0
     while True:
         #environment.render()
-        state = state/131072 #.flatten()
+        # state = state/131072 #.flatten()
         action = select_action(torch.FloatTensor([state]))
         
         next_state, reward, done, _ = environment.step(action.numpy()[0, 0])
-        # negative reward when attempt ends
         total_reward = total_reward + reward
         if done:
-            #print(next_state)
+            print(next_state)
             print("Reward: {0} || Episode {1} finished after {2} steps".format(total_reward, e, steps))
             total_reward = 0
             reward = -10
-        next_state = next_state/np.amax(next_state) #.flatten()
-        
-        memory.push((torch.FloatTensor([state]),
-                     action,  # action is already a tensor
-                     torch.FloatTensor([next_state]),
-                     torch.FloatTensor([reward])))
+        # next_state = next_state/np.amax(next_state) #.flatten()
+        memory.push(state,
+                     action.numpy()[0,0],  # action is already a tensor
+                     next_state,
+                     reward)
 
         learn()
 
@@ -92,7 +102,7 @@ def run_episode(e, environment):
             #print("{2} Episode {0} finished after {1} steps".format(e, steps, '\033[92m' if steps >= 195 else '\033[99m'))
             
             episode_durations.append(steps)
-
+            total_rewards.append(reward)
             if steps % 100 == 0:
                 torch.save(model, "pretrained_model/current_model_" + str(steps) + ".pth")
 
@@ -105,18 +115,34 @@ def learn():
 
     # random transition batch is taken from experience replay memory
     transitions = memory.sample(BATCH_SIZE)
-    batch_state, batch_action, batch_next_state, batch_reward = zip(*transitions)
-    
-    batch_state = Variable(torch.cat(batch_state))
-    batch_action = Variable(torch.cat(batch_action))
-    batch_reward = Variable(torch.cat(batch_reward))
-    batch_next_state = Variable(torch.cat(batch_next_state))
+    batch = Transition(*zip(*transitions))
+    # print(batch)
+    # print(batch_state)
+    # if any(batch.explore):
+        # batch_state = Variable(torch.cat(batch.state))
+        # batch_action = Variable(torch.cat(batch.action))
+        # batch_reward = Variable(torch.cat(batch.reward))
+        # batch_next_state = Variable(torch.cat(batch.next_state))        
+    # else:
+
+    batch_state = Variable(torch.FloatTensor(batch.state))
+    batch_action = Variable(torch.LongTensor(batch.action)).unsqueeze(1)
+    batch_reward = Variable(torch.FloatTensor(batch.reward))
+    batch_next_state = Variable(torch.FloatTensor(batch.next_state))
 
     # current Q values are estimated by NN for all actions
+    # print(batch_state)
+    #print(batch_action)
+    #print(batch_reward)
+    #print(batch_next_state)
     current_q_values = model(Variable(batch_state, volatile=True).type(torch.cuda.FloatTensor))
     current_q_values = current_q_values.gather(1, batch_action.cuda())
+    # print(current_q_values)
     # expected Q values are estimated from actions which gives maximum Q value
-    max_next_q_values = model(batch_next_state).detach().max(1)[0]
+    max_ = model(batch_next_state).detach().max(1)
+    #print(max_)
+    max_next_q_values =  max_[0]
+    #print(max_next_q_values)
     expected_q_values = batch_reward + (GAMMA * max_next_q_values.cpu())
 
     # loss is measured from error between current and newly expected Q values
@@ -129,7 +155,7 @@ def learn():
     
 #%% RUN AND SHOW THE RESULT
 
-EPISODES = 10000  # number of episodes
+EPISODES = 1000  # number of episodes
 
 
 

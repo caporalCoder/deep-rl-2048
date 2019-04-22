@@ -1,6 +1,7 @@
 from torch import nn
 import torch.nn.functional as F
 import torch as T
+import numpy as np
 class Network(nn.Module):
     def __init__(self):
         nn.Module.__init__(self)
@@ -55,8 +56,6 @@ class DQN(nn.Module):
         return self.head(observation)
 
 
-
-
 class DuelingDQN(nn.Module):
     def __init__(self, shape, outputs):
         super(DuelingDQN, self).__init__()
@@ -66,8 +65,17 @@ class DuelingDQN(nn.Module):
         self.num_actions = outputs
         
         self.conv1 = nn.Conv2d(1, 32, kernel_size=2, stride=2)
+        self.bn1 = nn.BatchNorm2d(32)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=2, stride=2)
+        self.bn2 = nn.BatchNorm2d(64)
         self.conv3 = nn.Conv2d(64, 64, kernel_size=1, stride=1)
+        self.bn3 = nn.BatchNorm2d(64)
+
+        if T.cuda.is_available():
+            self.device = T.cuda.set_device(0)
+        else:
+            self.device = T.device('cpu')
+        self.to(self.device)
 
         self.adv1 = nn.Linear(64, 512)
         self.adv2 = nn.Linear(512, self.num_actions)
@@ -78,15 +86,11 @@ class DuelingDQN(nn.Module):
     def forward(self, x):
         x = x.cuda()
         x = x.view(-1, 1 , 4, 4)
-        # print(x.size())
-        x = F.relu(self.conv1(x))
-        # print(x.size())
+        x = F.relu(self.bn1(self.conv1(x)))
 
         x = F.relu(self.conv2(x))
-        # print(x.size())
 
         x = F.relu(self.conv3(x))
-        # print(x.size())
 
         x = x.view(-1, 64)
 
@@ -100,3 +104,13 @@ class DuelingDQN(nn.Module):
     
     def feature_size(self):
         return self.conv3(self.conv2(self.conv1(T.zeros(1, *self.input_shape)))).view(1, -1).size(1)
+
+    def batch_to_tensor(self, given_batch, need_log2=False, action_batch=False):
+        if need_log2:
+            assert np.max(given_batch) >= 2, 'batch_data is weird: {}'.format(given_batch)
+            given_batch = np.clip(np.log2(given_batch) / 10, 0, 18).tolist()
+
+        dtype = T.long if action_batch else T.float32
+        batch = list(map(lambda x: T.tensor(x, device=self.device, dtype=dtype
+                                                ).unsqueeze(0).unsqueeze(0), given_batch))  
+        return T.cat(batch, 0)
