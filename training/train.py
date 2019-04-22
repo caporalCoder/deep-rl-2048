@@ -13,7 +13,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from network import Network, DQN, DuelingDQN
 from memory import ReplayMemory
-
+import numpy as np
 #%% hyper parameters
 EPS_START = 0.9  # e-greedy threshold start value
 EPS_END = 0.05  # e-greedy threshold end value
@@ -65,6 +65,7 @@ def run_episode(e, environment):
     total_reward = 0
     while True:
         #environment.render()
+        state = state/np.amax(state) #.flatten()
         action = select_action(torch.FloatTensor([state]))
         
         next_state, reward, done, _ = environment.step(action.numpy()[0, 0])
@@ -75,9 +76,8 @@ def run_episode(e, environment):
             print("Reward: {0} || Episode {1} finished after {2} steps".format(total_reward, e, steps))
             total_reward = 0
             reward = -10
-        #next_state = next_state.flatten()
+        next_state = next_state/np.amax(next_state) #.flatten()
         
-        #state = state.flatten()
         memory.push((torch.FloatTensor([state]),
                      action,  # action is already a tensor
                      torch.FloatTensor([next_state]),

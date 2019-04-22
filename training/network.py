@@ -67,22 +67,28 @@ class DuelingDQN(nn.Module):
         
         self.conv1 = nn.Conv2d(1, 32, kernel_size=2, stride=2)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=2, stride=2)
-        self.conv3 = nn.Conv2d(64, 64, kernel_size=2, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=1, stride=1)
 
-        self.adv1 = nn.Linear(64 * 4 * 4, 512)
+        self.adv1 = nn.Linear(64, 512)
         self.adv2 = nn.Linear(512, self.num_actions)
 
-        self.val1 = nn.Linear(64 * 4 * 4, 512)
+        self.val1 = nn.Linear(64 , 512)
         self.val2 = nn.Linear(512, 1)
         
     def forward(self, x):
         x = x.cuda()
         x = x.view(-1, 1 , 4, 4)
-        print(x.size())
+        # print(x.size())
         x = F.relu(self.conv1(x))
+        # print(x.size())
+
         x = F.relu(self.conv2(x))
+        # print(x.size())
+
         x = F.relu(self.conv3(x))
-        x = x.view(x.size(0), -1)
+        # print(x.size())
+
+        x = x.view(-1, 64)
 
         adv = F.relu(self.adv1(x))
         adv = self.adv2(adv)
