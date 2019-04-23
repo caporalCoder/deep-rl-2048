@@ -105,12 +105,4 @@ class DuelingDQN(nn.Module):
     def feature_size(self):
         return self.conv3(self.conv2(self.conv1(T.zeros(1, *self.input_shape)))).view(1, -1).size(1)
 
-    def batch_to_tensor(self, given_batch, need_log2=False, action_batch=False):
-        if need_log2:
-            assert np.max(given_batch) >= 2, 'batch_data is weird: {}'.format(given_batch)
-            given_batch = np.clip(np.log2(given_batch) / 10, 0, 18).tolist()
-
-        dtype = T.long if action_batch else T.float32
-        batch = list(map(lambda x: T.tensor(x, device=self.device, dtype=dtype
-                                                ).unsqueeze(0).unsqueeze(0), given_batch))  
-        return T.cat(batch, 0)
+    

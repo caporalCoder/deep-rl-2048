@@ -41,23 +41,23 @@ optimizer = optim.Adam(model.parameters(), LR)
 steps_done = 0
 def select_action(state):
     global steps_done
-    global epsHistory 
+    #global epsHistory 
     sample = random.random()
     eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
     steps_done += 1
 
-    epsHistory.append(eps_threshold)
+    #epsHistory.append(eps_threshold)
 
     #print(state.shape)
     #print(eps_threshold)
-    if sample > eps_threshold:
+    # if sample > eps_threshold:
         #return argmaxQ
         # state = state.cuda()
         # Variable(state, volatile=True).type(torch.FloatTensor)
-        return model(Variable(state, volatile=True).type(torch.FloatTensor)).data.max(1)[1].view(1, 1).cpu()
-    else:
-        #return random action
-        return torch.LongTensor([[random.randrange(2)]])
+    return model(Variable(state, volatile=True).type(torch.FloatTensor)).data.max(1)[1].view(1, 1).cpu()
+    # else:
+    #     #return random action
+    #     return torch.LongTensor([[random.randrange(2)]])
     
 
 
@@ -70,7 +70,11 @@ else:
 episode_durations = []
 total_rewards = []
 epsHistory = []
+losses = []
 def run_episode(e, environment):
+    global total_rewards
+    global episode_durations
+
     state = environment.reset()
     #state = state.flatten()
     steps = 0
@@ -87,11 +91,6 @@ def run_episode(e, environment):
             print("Reward: {0} || Episode {1} finished after {2} steps".format(total_reward, e, steps))
             total_reward = 0
             reward = -10
-        # next_state = next_state/np.amax(next_state) #.flatten()
-        memory.push(state,
-                     action.numpy()[0,0],  # action is already a tensor
-                     next_state,
-                     reward)
 
         learn()
 
@@ -110,34 +109,21 @@ def run_episode(e, environment):
             
 #%% TRAIN THE MODEL
 def learn():
+    global losses
     if len(memory) < BATCH_SIZE:
         return
 
     # random transition batch is taken from experience replay memory
     transitions = memory.sample(BATCH_SIZE)
     batch = Transition(*zip(*transitions))
-    # print(batch)
-    # print(batch_state)
-    # if any(batch.explore):
-        # batch_state = Variable(torch.cat(batch.state))
-        # batch_action = Variable(torch.cat(batch.action))
-        # batch_reward = Variable(torch.cat(batch.reward))
-        # batch_next_state = Variable(torch.cat(batch.next_state))        
-    # else:
-
     batch_state = Variable(torch.FloatTensor(batch.state))
     batch_action = Variable(torch.LongTensor(batch.action)).unsqueeze(1)
     batch_reward = Variable(torch.FloatTensor(batch.reward))
     batch_next_state = Variable(torch.FloatTensor(batch.next_state))
 
     # current Q values are estimated by NN for all actions
-    # print(batch_state)
-    #print(batch_action)
-    #print(batch_reward)
-    #print(batch_next_state)
     current_q_values = model(Variable(batch_state, volatile=True).type(torch.cuda.FloatTensor))
     current_q_values = current_q_values.gather(1, batch_action.cuda())
-    # print(current_q_values)
     # expected Q values are estimated from actions which gives maximum Q value
     max_ = model(batch_next_state).detach().max(1)
     #print(max_)
@@ -146,13 +132,13 @@ def learn():
     expected_q_values = batch_reward + (GAMMA * max_next_q_values.cpu())
 
     # loss is measured from error between current and newly expected Q values
-    loss = F.smooth_l1_loss(current_q_values.cuda().reshape_as(expected_q_values.cuda()), expected_q_values.cuda())
+    loss = F.mse_loss(current_q_values.cuda().reshape_as(expected_q_values.cuda()), expected_q_values.cuda())
 
     # backpropagation of loss to NN
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
-    
+    losses.append(loss.data)
 #%% RUN AND SHOW THE RESULT
 
 EPISODES = 1000  # number of episodes
@@ -168,5 +154,8 @@ for e in range(EPISODES):
     run_episode(e, env)
 
 print('Complete')
+plt.plot(total_rewards)
+plt.plot(epsHistory)
 plt.plot(episode_durations)
+plt.plot(losses)
 plt.show()
