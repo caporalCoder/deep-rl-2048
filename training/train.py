@@ -22,7 +22,7 @@ EPS_START = 0.9  # e-greedy threshold start value
 EPS_END = 0.05  # e-greedy threshold end value
 EPS_DECAY = 200  # e-greedy threshold decay
 GAMMA = 0.8  # Q-learning discount factor
-LR = 0.001  # NN optimizer learning rate
+LR = 0.01  # NN optimizer learning rate
 HIDDEN_LAYER = 256  # NN hidden layer size
 BATCH_SIZE = 16  # Q-learning batch size
 
@@ -91,7 +91,12 @@ def run_episode(e, environment):
             print("Reward: {0} || Episode {1} finished after {2} steps".format(total_reward, e, steps))
             total_reward = 0
             reward = -10
-
+        if np.array_equal(state, next_state):
+            reward -= 100
+        memory.push( state,
+                     action.numpy()[0,0],
+                     next_state,
+                     reward)
         learn()
 
         state = next_state
