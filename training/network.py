@@ -67,9 +67,7 @@ class DuelingDQN(nn.Module):
         self.conv1 = nn.Conv2d(1, 32, kernel_size=2, stride=2)
         self.bn1 = nn.BatchNorm2d(32)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=2, stride=2)
-        self.bn2 = nn.BatchNorm2d(64)
         self.conv3 = nn.Conv2d(64, 64, kernel_size=1, stride=1)
-        self.bn3 = nn.BatchNorm2d(64)
 
         if T.cuda.is_available():
             self.device = T.cuda.set_device(0)
@@ -105,4 +103,4 @@ class DuelingDQN(nn.Module):
     def feature_size(self):
         return self.conv3(self.conv2(self.conv1(T.zeros(1, *self.input_shape)))).view(1, -1).size(1)
 
-    
+
